@@ -1,0 +1,5 @@
+
+*.DS_Store
+Vault.sqlite3
+bin/*
+.vscode/*
