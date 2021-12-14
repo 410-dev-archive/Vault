@@ -20,6 +20,7 @@ import database.SQLite3;
 import screens.ColorScheme;
 import screens.Frame;
 import screens.UpdatableColor;
+import screens.views.subviews.About;
 import screens.views.subviews.NewEntry;
 import screens.views.subviews.ViewEntry;
 
@@ -138,6 +139,7 @@ public class Home extends JPanel implements UpdatableColor {
     private void buildUI() {
         // Create components
         JButton addButton = new JButton("Add");
+        JButton aboutButton = new JButton("About");
 
         // TODO: Add more buttons and functionalities
         asyncFileListUpdate();
@@ -155,6 +157,7 @@ public class Home extends JPanel implements UpdatableColor {
 
         // Place components
         addButton.setBounds(Frame.frame.getWidth() - 100, Frame.frame.getHeight() - 100, 100, 50);
+        aboutButton.setBounds(Frame.frame.getWidth() - 100, Frame.frame.getHeight() - 50, 100, 50);
         fileLists.setBounds(0, 0, Frame.frame.getWidth(), Frame.frame.getHeight() - 100);
 
         // On addButton click
@@ -171,8 +174,23 @@ public class Home extends JPanel implements UpdatableColor {
             }
         });
 
+        // On aboutButton click
+        aboutButton.addMouseListener(new MouseInputAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JFrame frame = new JFrame("About");
+                frame.setResizable(false);
+                frame.setSize(600, 200);
+                frame.setLocationRelativeTo(null);
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+                new About(frame);
+            }
+        });
+
         // Add components
         this.add(addButton);
+        this.add(aboutButton);
         this.add(fileLists);
     }
 

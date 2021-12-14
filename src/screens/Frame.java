@@ -4,12 +4,13 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import database.SQLite3;
+import utils.data.Static;
 
 public class Frame {
     public static JFrame frame;
 
     public static void createFrame() {
-        frame = new JFrame("Vault");
+        frame = new JFrame("Vault (" + Static.VERSION + ")");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 500);
         frame.setResizable(false);
