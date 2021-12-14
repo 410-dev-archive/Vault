@@ -9,6 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.event.MouseInputAdapter;
 
 import java.awt.event.MouseEvent;
@@ -20,6 +21,7 @@ import database.SQLite3;
 import screens.ColorScheme;
 import screens.Frame;
 import screens.UpdatableColor;
+import screens.ViewDimension;
 import screens.views.subviews.About;
 import screens.views.subviews.NewEntry;
 import screens.views.subviews.ViewEntry;
@@ -29,8 +31,6 @@ import utils.data.Entries;
 import utils.data.Entry;
 import utils.data.UserInfo;
 
-// TODO: Create realtime list update
-
 
 public class Home extends JPanel implements UpdatableColor {
 
@@ -38,9 +38,12 @@ public class Home extends JPanel implements UpdatableColor {
 
     private static boolean decryptionComplete = false;
     private static boolean fileListReady = false;
+    private static ViewDimension frameDimension = new ViewDimension();
 
     private JList fileLists;
-
+    private JButton addButton = new JButton("Add");
+    private JButton aboutButton = new JButton("About");
+    private JButton searchButton = new JButton("Search...");
 
     public Home(UserInfo user) {
         super();
@@ -77,6 +80,61 @@ public class Home extends JPanel implements UpdatableColor {
     }
 
 
+    private void asyncAdaptiveGUI() {
+        Thread t = new Thread() {
+            public void run() {
+                while(true) {
+                    frameDimension.height = Frame.frame.getHeight();
+                    frameDimension.width = Frame.frame.getWidth();
+
+                    ViewDimension addButtonDimension = new ViewDimension();
+                    addButtonDimension.width = 100;
+                    addButtonDimension.height = 30;
+
+                    ViewDimension aboutButtonDimension = new ViewDimension();
+                    aboutButtonDimension.width = 100;
+                    aboutButtonDimension.height = 30;
+
+                    ViewDimension searchButtonDimension = new ViewDimension();
+                    searchButtonDimension.width = 100;
+                    searchButtonDimension.height = 30;
+
+                    addButtonDimension.alignCenter(frameDimension);
+                    aboutButtonDimension.alignCenter(frameDimension);
+                    searchButtonDimension.alignCenter(frameDimension);
+
+                    addButtonDimension.toBottom(frameDimension);
+                    aboutButtonDimension.toBottom(frameDimension);
+                    searchButtonDimension.toBottom(frameDimension);
+
+                    addButtonDimension.toRight(frameDimension);
+                    aboutButtonDimension.toLeft(frameDimension);
+
+                    addButtonDimension.y -= addButtonDimension.height + 10;
+                    aboutButtonDimension.y -= aboutButtonDimension.height + 10;
+                    searchButtonDimension.y -= searchButtonDimension.height + 10;
+                    
+                    addButton.setBounds(addButtonDimension.x, addButtonDimension.y, addButtonDimension.width, addButtonDimension.height);
+                    aboutButton.setBounds(aboutButtonDimension.x, aboutButtonDimension.y, aboutButtonDimension.width, aboutButtonDimension.height);
+                    searchButton.setBounds(searchButtonDimension.x, searchButtonDimension.y, searchButtonDimension.width, searchButtonDimension.height);
+
+                    add(addButton);
+                    add(aboutButton);
+                    add(searchButton);
+                    repaint();
+
+                    try{
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
+        t.start();
+    }
+
     private void asyncFileListUpdate() {
         Thread t = new Thread() {
             public void run() {
@@ -101,7 +159,6 @@ public class Home extends JPanel implements UpdatableColor {
                             entryNames.add(typePrefix + entry.getName() + " " + tags + " (" + entry.getAddedDate() + ")");
                         }
                         fileLists = new JList(entryNames.toArray());
-                        fileLists.setBounds(0, 0, Frame.frame.getWidth(), Frame.frame.getHeight() - 100);
                         fileLists.addMouseListener(new MouseInputAdapter() {
                             public void mouseClicked(MouseEvent evt) {
                                 JList list = (JList)evt.getSource();
@@ -110,7 +167,7 @@ public class Home extends JPanel implements UpdatableColor {
                                     if (index >= 0) {
                                         JFrame frame = new JFrame(Entries.getEntries().get(index).getName());
                                         frame.setResizable(true);
-                                        frame.setSize(300, 300);
+                                        frame.setSize(500, 600);
                                         frame.setLocationRelativeTo(null);
                                         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 
@@ -123,6 +180,7 @@ public class Home extends JPanel implements UpdatableColor {
                         add(fileLists);
                         repaint();
                     }
+                    fileLists.setBounds(0, 0, frameDimension.width, frameDimension.height - 100);
                     
                     try {
                         Thread.sleep(500);
@@ -138,8 +196,7 @@ public class Home extends JPanel implements UpdatableColor {
 
     private void buildUI() {
         // Create components
-        JButton addButton = new JButton("Add");
-        JButton aboutButton = new JButton("About");
+        
 
         // TODO: Add more buttons and functionalities
         asyncFileListUpdate();
@@ -155,9 +212,9 @@ public class Home extends JPanel implements UpdatableColor {
             }
         }
 
+        asyncAdaptiveGUI();
+
         // Place components
-        addButton.setBounds(Frame.frame.getWidth() - 100, Frame.frame.getHeight() - 100, 100, 50);
-        aboutButton.setBounds(Frame.frame.getWidth() - 100, Frame.frame.getHeight() - 50, 100, 50);
         fileLists.setBounds(0, 0, Frame.frame.getWidth(), Frame.frame.getHeight() - 100);
 
         // On addButton click
@@ -178,6 +235,8 @@ public class Home extends JPanel implements UpdatableColor {
         aboutButton.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (About.isOpen) return;
+                About.isOpen = true;
                 JFrame frame = new JFrame("About");
                 frame.setResizable(false);
                 frame.setSize(600, 200);
@@ -189,8 +248,6 @@ public class Home extends JPanel implements UpdatableColor {
         });
 
         // Add components
-        this.add(addButton);
-        this.add(aboutButton);
         this.add(fileLists);
     }
 

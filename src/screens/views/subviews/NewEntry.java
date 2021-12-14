@@ -11,6 +11,7 @@ import database.SQLStatementBuilder;
 import database.SQLite3;
 import screens.ColorScheme;
 import screens.UpdatableColor;
+import screens.ViewDimension;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -37,12 +38,19 @@ public class NewEntry extends JPanel implements UpdatableColor {
 
     private String filePath = "";
 
-    private JTextField fieldExtension;
+    private static boolean isUpdated = false;
 
-    JTextField fieldTitle = new JTextField();
-    JTextArea textAreaContent = new JTextArea();
-    JTextField fieldTags = new JTextField();
-    JButton saveButton = new JButton("Save");
+    private static JTextField fieldExtension = new JTextField();
+    private static JTextField fieldTitle = new JTextField();
+    private static JTextArea textAreaContent = new JTextArea();
+    private static JTextField fieldTags = new JTextField();
+    private static JButton saveButton = new JButton("Save");
+    private static JLabel labelTitle = new JLabel("Title");
+    private static JLabel labelContent = new JLabel("Content");
+    private static JButton useFileButton = new JButton("Select File");
+    private static JLabel labelTags = new JLabel("Tags (Split by comma)");
+    private static JLabel labelExtension = new JLabel("Extension");
+    private static JScrollPane fieldContent;
 
     private MouseInputAdapter onClickSaveAdapter = new MouseInputAdapter() {
         @Override
@@ -51,57 +59,167 @@ public class NewEntry extends JPanel implements UpdatableColor {
         }
     };
 
+    private void updateAdaptiveUI() {
+        try {
+            if (isUpdated) {
+                remove(fieldExtension);
+                remove(fieldTitle);
+                remove(textAreaContent);
+                remove(fieldTags);
+                remove(saveButton);
+                remove(labelTitle);
+                remove(labelContent);
+                remove(useFileButton);
+                remove(labelTags);
+                remove(labelExtension);
+                remove(fieldContent);
+            }else{
+                isUpdated = true;
+            }
+
+            ViewDimension frameDimension = new ViewDimension();
+            frameDimension.width = frame.getWidth();
+            frameDimension.height = frame.getHeight();
+
+            ViewDimension labelTitleDimension = new ViewDimension();
+            ViewDimension fieldTitleDimension = new ViewDimension();
+            ViewDimension labelContentDimension = new ViewDimension();
+            ViewDimension textAreaContentDimension = new ViewDimension();
+            ViewDimension useFileButtonDimension = new ViewDimension();
+            ViewDimension labelTagsDimension = new ViewDimension();
+            ViewDimension fieldTagsDimension = new ViewDimension();
+            ViewDimension labelExtensionDimension = new ViewDimension();
+            ViewDimension fieldExtensionDimension = new ViewDimension();
+            ViewDimension saveButtonDimension = new ViewDimension();
+
+            labelTitleDimension.width = frameDimension.width - 10;
+            labelTitleDimension.height = 25;
+
+            fieldTitleDimension.width = frameDimension.width - 10;
+            fieldTitleDimension.height = 25;
+
+            labelContentDimension.width = frameDimension.width - 10;
+            labelContentDimension.height = 25;
+
+            labelTagsDimension.width = frameDimension.width - 10;
+            labelTagsDimension.height = 25;
+
+            fieldTagsDimension.width = frameDimension.width - 10;
+            fieldTagsDimension.height = 25;
+
+            labelExtensionDimension.width = frameDimension.width - 10;
+            labelExtensionDimension.height = 25;
+
+            fieldExtensionDimension.width = frameDimension.width - 10;
+            fieldExtensionDimension.height = 25;
+
+            saveButtonDimension.width = frameDimension.width - 10;
+            saveButtonDimension.height = 25;
+
+            useFileButtonDimension.width = frameDimension.width - 10;
+            useFileButtonDimension.height = 25;
+
+            textAreaContentDimension.width = frameDimension.width - 10;
+            textAreaContentDimension.height = frameDimension.height - (labelTitleDimension.height + fieldTitleDimension.height + labelContentDimension.height + labelTagsDimension.height + fieldTagsDimension.height + labelExtensionDimension.height + fieldTagsDimension.height + saveButtonDimension.height + useFileButtonDimension.height + 100);
+
+            labelTitleDimension.alignCenter(frameDimension);
+            fieldTitleDimension.alignCenter(frameDimension);
+            labelContentDimension.alignCenter(frameDimension);
+            textAreaContentDimension.alignCenter(frameDimension);
+            labelTagsDimension.alignCenter(frameDimension);
+            fieldTagsDimension.alignCenter(frameDimension);
+            labelExtensionDimension.alignCenter(frameDimension);
+            fieldExtensionDimension.alignCenter(frameDimension);
+            saveButtonDimension.alignCenter(frameDimension);
+            useFileButtonDimension.alignCenter(frameDimension);
+
+            labelTitleDimension.toTop(frameDimension);
+
+            fieldTitleDimension.y = labelTitleDimension.y + labelTitleDimension.height + 5;
+            labelContentDimension.y = fieldTitleDimension.y + fieldTitleDimension.height + 5;
+            textAreaContentDimension.y = labelContentDimension.y + labelContentDimension.height + 5;
+            labelTagsDimension.y = textAreaContentDimension.y + textAreaContentDimension.height + 5;
+            fieldTagsDimension.y = labelTagsDimension.y + labelTagsDimension.height + 5;
+            labelExtensionDimension.y = fieldTagsDimension.y + fieldTagsDimension.height + 5;
+            fieldExtensionDimension.y = labelExtensionDimension.y + labelExtensionDimension.height + 5;
+            useFileButtonDimension.y = fieldExtensionDimension.y + fieldExtensionDimension.height + 5;
+            saveButtonDimension.y = useFileButtonDimension.y + useFileButtonDimension.height + 5;
+
+            labelTitle.setBounds(labelTitleDimension.x, labelTitleDimension.y, labelTitleDimension.width, labelTitleDimension.height);
+            fieldTitle.setBounds(fieldTitleDimension.x, fieldTitleDimension.y, fieldTitleDimension.width, fieldTitleDimension.height);
+
+            labelContent.setBounds(labelContentDimension.x, labelContentDimension.y, labelContentDimension.width, labelContentDimension.height);
+            textAreaContent.setBounds(textAreaContentDimension.x, textAreaContentDimension.y, textAreaContentDimension.width, textAreaContentDimension.height);
+            fieldContent = new JScrollPane(textAreaContent);
+
+            labelTags.setBounds(labelTagsDimension.x, labelTagsDimension.y, labelTagsDimension.width, labelTagsDimension.height);
+            fieldTags.setBounds(fieldTagsDimension.x, fieldTagsDimension.y, fieldTagsDimension.width, fieldTagsDimension.height);
+
+            useFileButton.setBounds(useFileButtonDimension.x, useFileButtonDimension.y, useFileButtonDimension.width, useFileButtonDimension.height);
+
+            labelExtension.setBounds(labelExtensionDimension.x, labelExtensionDimension.y, labelExtensionDimension.width, labelExtensionDimension.height);
+            fieldExtension.setBounds(fieldExtensionDimension.x, fieldExtensionDimension.y, fieldExtensionDimension.width, fieldExtensionDimension.height);
+
+            saveButton.setBounds(saveButtonDimension.x, saveButtonDimension.y, saveButtonDimension.width, saveButtonDimension.height);
+
+            fieldContent.setBounds(textAreaContentDimension.x, textAreaContentDimension.y, textAreaContentDimension.width, textAreaContentDimension.height);
+            fieldContent.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            fieldContent.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+            add(labelTitle);
+            add(fieldTitle);
+            add(labelContent);
+            add(fieldContent);
+            add(useFileButton);
+            add(labelTags);
+            add(fieldTags);
+            add(labelExtension);
+            add(fieldExtension);
+            add(saveButton);
+        }catch(Exception ee) {
+            System.out.println(ee.toString());
+        }
+    }
+
+    private void asyncAdaptiveGUI() {
+        Thread t = new Thread() {
+            public void run() {
+
+                int alreadyRan = 0;
+
+                int width = 0;
+                int height = 0;
+
+                while(true) {
+                    if (frame.getWidth() != width || frame.getHeight() != height || alreadyRan < 2) {
+                        width = frame.getWidth();
+                        height = frame.getHeight();
+                        alreadyRan++;
+                        updateAdaptiveUI();
+                    }
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
+        t.start();
+    }
+
     public NewEntry(JFrame parentFrame, UserInfo userInfo) {
         super();
         this.frame = parentFrame;
         this.userInfo = userInfo;
 
         this.setLayout(null);
-        this.setSize(parentFrame.getWidth(), parentFrame.getHeight());
+        this.frame.setSize(500, 500);
+        this.setSize(this.frame.getWidth(), this.frame.getHeight());
 
         this.setBackground(ColorScheme.background);
 
-        // TODO: Make the components inside to be adaptive to the frame size
-
-        JLabel labelTitle = new JLabel("Title");
-        
-
-        JLabel labelContent = new JLabel("Content");
-        
-        textAreaContent.setLineWrap(true);
-        textAreaContent.setWrapStyleWord(true);
-        JScrollPane fieldContent = new JScrollPane(textAreaContent);
-        fieldContent.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        fieldContent.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        JButton useFileButton = new JButton("Select File");
-
-        JLabel labelTags = new JLabel("Tags (Split by comma)");
-        
-
-        JLabel labelExtension = new JLabel("Extension");
-        fieldExtension = new JTextField();
-
-
-        // Set bounds
-        labelTitle.setBounds(10, 10, 100, 25);
-        fieldTitle.setBounds(120, 10, 200, 25);
-        
-        labelContent.setBounds(10, 40, 100, 25);
-        fieldContent.setBounds(120, 40, 200, 200);
-
-        useFileButton.setBounds(10, 240, 100, 25);
-
-        labelTags.setBounds(10, 270, 100, 25);
-        fieldTags.setBounds(120, 270, 200, 25);
-
-        labelExtension.setBounds(10, 300, 100, 25);
-        fieldExtension.setBounds(120, 300, 200, 25);
-
-        saveButton.setBounds(10, 330, 100, 25);
-
-
-        // On click when open pressed
         useFileButton.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -124,18 +242,10 @@ public class NewEntry extends JPanel implements UpdatableColor {
             }
         });
 
-        // On click when save pressed
         saveButton.addMouseListener(onClickSaveAdapter);
 
-        // Add components
-        this.add(labelTitle);
-        this.add(fieldTitle);
-        this.add(labelContent);
-        this.add(fieldContent);
-        this.add(useFileButton);
-        this.add(labelTags);
-        this.add(fieldTags);
-        this.add(saveButton);
+        // Set bounds
+        asyncAdaptiveGUI();
 
         this.setVisible(true);
 
@@ -270,6 +380,15 @@ public class NewEntry extends JPanel implements UpdatableColor {
                     entry.setId(id);
                     Entries.add(entry);
                     JOptionPane.showMessageDialog(null, "Successfully saved to database");
+
+                    // Clear fields
+                    fieldTitle.setText("");
+                    textAreaContent.setText("");
+                    fieldTags.setText("");
+                    fieldExtension.setText("Normal Text");
+                    filePath = "";
+                    fieldContent.setVisible(true);
+
                     frame.dispose();
                 }catch(Exception e2) {
                     e2.printStackTrace();

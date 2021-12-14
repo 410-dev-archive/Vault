@@ -28,6 +28,7 @@ public class Login extends JPanel implements UpdatableColor {
         // Configure the panel
         super();
         this.setBounds(0, 0, Frame.frame.getWidth(), Frame.frame.getHeight());
+        Frame.frame.setResizable(false);
         this.setLayout(null);
         this.setBackground(ColorScheme.background);
 

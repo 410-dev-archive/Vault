@@ -31,6 +31,7 @@ public class Signup extends JPanel implements UpdatableColor {
         super();
         this.setBackground(ColorScheme.background);
         this.setBounds(0, 0, Frame.frame.getWidth(), Frame.frame.getHeight());
+        Frame.frame.setResizable(false);
         this.setLayout(null);
 
         // Set bounds for components

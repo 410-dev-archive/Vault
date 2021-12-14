@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class SQLStatementBuilder {
     private ArrayList<SQLParameter> filters = new ArrayList<>();
+    private ArrayList<SQLParameter> filters2 = new ArrayList<>();
 
     private String tableName;
     private String command;
@@ -20,6 +21,10 @@ public class SQLStatementBuilder {
 
     public void addParameter(SQLParameter filter) {
         filters.add(filter);
+    }
+
+    public void addParameter2(SQLParameter filter) {
+        filters2.add(filter);
     }
 
     public String build() {
@@ -71,33 +76,6 @@ public class SQLStatementBuilder {
                 }
                 builder.append(";");
             }
-        } else if (command.equals(UPDATE)) {
-            builder.append(" ").append(tableName);
-            if (filters.size() > 0) {
-                builder.append(" SET ");
-                for (int i = 0; i < filters.size(); i++) {
-                    // builder.append(filters.get(i).column)
-                    //        .append(" = \"")
-                    //        .append(filters.get(i).value)
-                    //        .append("\"");
-                    builder.append(filters.get(i).column)
-                           .append(" ")
-                           .append(filters.get(i).operator)
-                           .append(" \"");
-                    if (filters.get(i).operator.equals(SQLParameter.LIKE)) {
-                        builder.append("%");
-                    }
-                    builder.append(filters.get(i).value);
-                    if (filters.get(i).operator.equals(SQLParameter.LIKE)) {
-                        builder.append("%");
-                    }
-                    builder.append("\"");
-                    if (i < filters.size() - 1 && !filters.get(i).nextOperand.equals("")) {
-                        builder.append(" " + filters.get(i).nextOperand + " ");
-                    }
-                }
-                builder.append(";");
-            }
         } else if (command.equals(INSERT)) {
             builder.append(" INTO ").append(tableName);
             if (filters.size() > 0) {
@@ -119,8 +97,44 @@ public class SQLStatementBuilder {
                 }
                 builder.append(");");
             }
-        }
+        }else if (command.equals(UPDATE)) {
+            builder.append(" ").append(tableName);
+            if (filters.size() > 0) {
+                builder.append(" SET ");
+                for (int i = 0; i < filters.size(); i++) {
+                    builder.append(filters.get(i).column)
+                           .append(" = \"")
+                           .append(filters.get(i).value)
+                           .append("\"");
+                    if (i < filters.size() - 1 && !filters.get(i).nextOperand.equals("")) {
+                        builder.append(" " + filters.get(i).nextOperand + " ");
+                    }
+                }
+            }
 
+            if (filters2.size() > 0) {
+                builder.append(" WHERE ");
+                for (int i = 0; i < filters2.size(); i++) {
+                    builder.append(filters2.get(i).column)
+                           .append(" ")
+                           .append(filters2.get(i).operator)
+                           .append(" \"");
+                    if (filters2.get(i).operator.equals(SQLParameter.LIKE)) {
+                        builder.append("%");
+                    }
+                    builder.append(filters2.get(i).value);
+                    if (filters2.get(i).operator.equals(SQLParameter.LIKE)) {
+                        builder.append("%");
+                    }
+                    builder.append("\"");
+                    if (i < filters2.size() - 1 && !filters2.get(i).nextOperand.equals("")) {
+                        builder.append(" " + filters2.get(i).nextOperand + " ");
+                    }
+                }
+            }
+            builder.append(";");
+        }
+        System.out.println("SQL: " + builder.toString());
         return builder.toString();
     }
 }

@@ -10,6 +10,8 @@ import utils.data.Static;
 
 public class About extends JPanel implements UpdatableColor {
 
+    public static boolean isOpen = false;
+
     public About(JFrame frame) {
         JLabel version = new JLabel("Version: " + Static.VERSION);
         JLabel author = new JLabel("Author: " + Static.DEVELOPER);
@@ -32,6 +34,12 @@ public class About extends JPanel implements UpdatableColor {
         this.add(author);
         this.add(copyright);
         this.add(disclaimer);
+
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                isOpen = false;
+            }
+        });
 
         frame.setContentPane(this);
         frame.setVisible(true);

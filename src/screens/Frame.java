@@ -13,6 +13,7 @@ public class Frame {
         frame = new JFrame("Vault (" + Static.VERSION + ")");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 500);
+        frame.setMinimumSize(new java.awt.Dimension(400, 400));
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
