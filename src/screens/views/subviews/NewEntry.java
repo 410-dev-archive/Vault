@@ -39,6 +39,7 @@ public class NewEntry extends JPanel implements UpdatableColor {
     private String filePath = "";
 
     private static boolean isUpdated = false;
+    private static boolean isSaving = false;
 
     private static JTextField fieldExtension = new JTextField();
     private static JTextField fieldTitle = new JTextField();
@@ -255,6 +256,7 @@ public class NewEntry extends JPanel implements UpdatableColor {
 
 
     private void save(String title, String content, String tags) {
+        isSaving = true;
         saveButton.removeMouseListener(onClickSaveAdapter);
         saveButton.setText("Saving...");
         saveButton.setEnabled(false);
@@ -270,10 +272,18 @@ public class NewEntry extends JPanel implements UpdatableColor {
                         fieldExtension.setText(filePath.substring(filePath.lastIndexOf(".") + 1));
                     }catch (NoSuchFileException e) {
                         JOptionPane.showMessageDialog(null, "File not found");
+                        saveButton.addMouseListener(onClickSaveAdapter);
+                        saveButton.setText("Save");
+                        saveButton.setEnabled(true);
+                        isSaving = false;
                         return;
                     }catch (Exception e) {
                         e.printStackTrace();
                         JOptionPane.showMessageDialog(null, "Error reading file");
+                        saveButton.addMouseListener(onClickSaveAdapter);
+                        saveButton.setText("Save");
+                        saveButton.setEnabled(true);
+                        isSaving = false;
                         return;
                     }
                 }
@@ -388,6 +398,12 @@ public class NewEntry extends JPanel implements UpdatableColor {
                     fieldExtension.setText("Normal Text");
                     filePath = "";
                     fieldContent.setVisible(true);
+
+                    saveButton.addMouseListener(onClickSaveAdapter);
+                    saveButton.setText("Save");
+                    saveButton.setEnabled(true);
+
+                    isSaving = false;
 
                     frame.dispose();
                 }catch(Exception e2) {

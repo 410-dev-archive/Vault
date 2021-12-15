@@ -37,6 +37,8 @@ public class ViewEntry extends JPanel implements UpdatableColor {
 
     private static String data = "";
 
+    private static boolean isSaving = false;
+
     private static JFrame frame;
     private static Entry entry;
     private static UserInfo userInfo;
@@ -107,7 +109,15 @@ public class ViewEntry extends JPanel implements UpdatableColor {
         title.setBounds(frame.getWidth() / 2 - title.getPreferredSize().width / 2, frame.getHeight() / 2 - title.getPreferredSize().height / 2, title.getPreferredSize().width, title.getPreferredSize().height);
         title.setForeground(ColorScheme.text);
         this.add(title);
-        
+
+        delete = new JButton("Delete");
+        export = new JButton("Export");
+        viewTimestamps = new JButton("View Timestamps");
+        modifiedTimestamp = new JButton("Modified Timestamp");
+        editNormalText = new JButton("Edit");
+        this.title = new JTextField();
+        tags = new JTextField();
+        content = new JTextField();
 
         Thread asyncThread = new Thread() {
             @Override
@@ -247,6 +257,7 @@ public class ViewEntry extends JPanel implements UpdatableColor {
         editNormalText.setEnabled(false);
         Thread action = new Thread() {
             public void run() {
+                isSaving = true;
                 String savableContent = content;
                 String extension = "";
                 if (isFile) {
@@ -372,10 +383,12 @@ public class ViewEntry extends JPanel implements UpdatableColor {
                     Entries.add(newEntry);
                     JOptionPane.showMessageDialog(null, "Successfully saved to database");
                     editNormalText.setText("Updated!");
+                    isSaving = false;
                 }catch(Exception e2) {
                     e2.printStackTrace();
                     JOptionPane.showMessageDialog(null, "Error saving to database");
                     editNormalText.setText("Error while updating");
+                    isSaving = true;
                 }
 
                 editNormalText.addMouseListener(onEditButtonClicked);
@@ -464,9 +477,17 @@ public class ViewEntry extends JPanel implements UpdatableColor {
         editNormalText.setForeground(ColorScheme.text); 
         
         if (entry.getType().equals("Normal Text")) {
-            editNormalText.setText("Save");   
+            if (!isSaving) {
+                editNormalText.setText("Save");   
+                editNormalText.addMouseListener(onEditButtonClicked);
+                editNormalText.setEnabled(true);
+            }
         }else{
-            editNormalText.setText("Change File");
+            if (!isSaving) {
+                editNormalText.setText("Change File");
+                editNormalText.addMouseListener(onEditButtonClicked);
+                editNormalText.setEnabled(true);
+            }
         }
 
         this.add(title);
