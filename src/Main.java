@@ -30,7 +30,7 @@ public class Main {
         // If exists, then login. Otherwise create new database and signup
         if (db.isFile()) Frame.setContent(new Login());
         else {
-            // TODO: Create new database
+            SQLite3.createDatabase();
             Frame.setContent(new Signup());
         }
 

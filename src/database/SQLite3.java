@@ -50,4 +50,11 @@ public class SQLite3 {
         SQLite3.close();
         return executeQuery(statement.build());
     }
+
+    public static void createDatabase() throws Exception {
+        String sqlStatementForData = "CREATE TABLE \"data\" (\"id\" integer,\"data\" text,\"owner\" text,\"type\" text,\"addedDate\" text,\"readDate\" text,\"index\" text,\"tags\" text,\"modifiedDate\" text,\"title\" text, PRIMARY KEY (id))";
+        String sqlStatementForUser = "CREATE TABLE \"users\" (\"id\" integerserial,\"user\" text NOT NULL, PRIMARY KEY (id))";
+        executeQuery(sqlStatementForData);
+        executeQuery(sqlStatementForUser);
+    }
 }

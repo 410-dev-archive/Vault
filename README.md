@@ -19,4 +19,8 @@ Vault is a secure, encrypted file database. It is written in Java, with combinat
 - [x] Adaptive GUI
 - [x] Realtime list update
 - [x] Edit entry info in entry detail window
-- [ ] Create SQLite3 DB on start if not exists
+- [x] Create SQLite3 DB on start if not exists
+
+## Roadmap for Beta 1.1
+- [ ] Restructure codes
+- [ ] Fix bugs
