@@ -4,6 +4,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet; 
 import java.sql.Statement;
 
+import screens.ColorScheme;
+import utils.data.Constants;
+
 public class SQLite3 {
 
     private static Connection con = null; 
@@ -51,10 +54,18 @@ public class SQLite3 {
         return executeQuery(statement.build());
     }
 
-    public static void createDatabase() throws Exception {
-        String sqlStatementForData = "CREATE TABLE \"data\" (\"id\" integer,\"data\" text,\"owner\" text,\"type\" text,\"addedDate\" text,\"readDate\" text,\"index\" text,\"tags\" text,\"modifiedDate\" text,\"title\" text, PRIMARY KEY (id))";
+    public static void initialSetup() throws Exception {
+        String sqlStatementForData = "CREATE TABLE \"data\" (\"id\" integer,\"data\" text,\"owner\" text,\"type\" text,\"addedDate\" text,\"readDate\" text,\"tags\" text,\"modifiedDate\" text,\"title\" text,\"file\" BLOB, PRIMARY KEY (id))";
         String sqlStatementForUser = "CREATE TABLE \"users\" (\"id\" integerserial,\"user\" text NOT NULL, PRIMARY KEY (id))";
+        String sqlStatementForCompatibility = "CREATE TABLE \"compatibility\" (\"id\" integerserial,\"key\" text NOT NULL,\"value\" text NOT NULL, PRIMARY KEY (id))";
+        String sqlStatementForConfigurations = "CREATE TABLE \"configurations\" (\"id\" integerserial,\"key\" text NOT NULL,\"value\" text NOT NULL, PRIMARY KEY (id))";
         executeQuery(sqlStatementForData);
         executeQuery(sqlStatementForUser);
+        executeQuery(sqlStatementForCompatibility);
+        executeQuery(sqlStatementForConfigurations);
+
+        executeQuery("INSERT INTO compatibility (key, value) VALUES ('version', '" + Constants.VERSION + "');");
+        executeQuery("INSERT INTO compatibility (key, value) VALUES ('databaseType', '" + Constants.DBTYPE + "');");
+        executeQuery("INSERT INTO configurations (key, value) VALUES ('color', '" + ColorScheme.ID_WHITE + "');");
     }
 }

@@ -9,7 +9,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.event.MouseInputAdapter;
 
 import java.awt.event.MouseEvent;
@@ -26,7 +25,6 @@ import screens.views.subviews.About;
 import screens.views.subviews.NewEntry;
 import screens.views.subviews.ViewEntry;
 
-import utils.CoreCryptography;
 import utils.data.Entries;
 import utils.data.Entry;
 import utils.data.UserInfo;
@@ -40,7 +38,7 @@ public class Home extends JPanel implements UpdatableColor {
     private static boolean fileListReady = false;
     private static ViewDimension frameDimension = new ViewDimension();
 
-    private JList fileLists;
+    private JList<Object> fileLists;
     private JButton addButton = new JButton("Add");
     private JButton aboutButton = new JButton("About");
     private JButton searchButton = new JButton("Search...");
@@ -148,9 +146,10 @@ public class Home extends JPanel implements UpdatableColor {
                         ArrayList<String> entryNames = new ArrayList<>();
                         for (Entry entry : Entries.getEntries()) {
                             String tags = "";
-                            for (String tag : entry.getTags()) {
-                                tags += "#" + tag + " ";
-                            }
+                            // TODO: Add tags
+                            // for (String tag : entry.getTags()) {
+                            //     tags += "#" + tag + " ";
+                            // }
                             int prefixLength = entry.getType().length() + 2;
                             String typePrefix = "[" + entry.getType() + "]";
                             for(int i = prefixLength; i < 17; i++) {
@@ -158,10 +157,11 @@ public class Home extends JPanel implements UpdatableColor {
                             }
                             entryNames.add(typePrefix + entry.getName() + " " + tags + " (" + entry.getAddedDate() + ")");
                         }
-                        fileLists = new JList(entryNames.toArray());
+                        fileLists = new JList<>(entryNames.toArray());
                         fileLists.addMouseListener(new MouseInputAdapter() {
                             public void mouseClicked(MouseEvent evt) {
-                                JList list = (JList)evt.getSource();
+                                @SuppressWarnings("unchecked")
+                                JList<Object> list = (JList<Object>)evt.getSource();
                                 if (evt.getClickCount() == 2) {
                                     int index = list.locationToIndex(evt.getPoint());
                                     if (index >= 0) {
@@ -196,9 +196,6 @@ public class Home extends JPanel implements UpdatableColor {
 
     private void buildUI() {
         // Create components
-        
-
-        // TODO: Add more buttons and functionalities
         asyncFileListUpdate();
 
         while(true) {
@@ -221,13 +218,7 @@ public class Home extends JPanel implements UpdatableColor {
         addButton.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                JFrame frame = new JFrame("Add Entry");
-                frame.setResizable(true);
-                frame.setSize(300, 300); // TODO: Change the dimension
-                frame.setLocationRelativeTo(null);
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-                new NewEntry(frame, userInfo);
+                new NewEntry(new JFrame("Add Entry"), userInfo);
             }
         });
 
@@ -274,58 +265,28 @@ public class Home extends JPanel implements UpdatableColor {
                     ResultSet rs = SQLite3.executeQuery(builder);
 
                     while(rs.next()) {
-                        String id = rs.getInt("id") + "";
-                        String data = rs.getString("data");
-                        String type = rs.getString("type");
-                        String addedDate = rs.getString("addedDate");
-                        String modified = rs.getString("modifiedDate");
-                        String readDate = rs.getString("readDate");
-                        String tags = rs.getString("tags");
-                        String title = rs.getString("title");
 
-                        if (addedDate == null || addedDate.equals("") || addedDate.equals("null")) {
+                        Entry entry = new Entry(rs.getString("title"), rs.getInt("id") + "", rs.getString("data"), rs.getString("type"), rs.getString("addedDate"), rs.getString("modifiedDate"), rs.getString("readDate"), rs.getString("tags"), true);
+                        int exit = entry.decrypt(userInfo, false);
+                        switch (exit) {
+                            case Entry.DECRYPT_FAILURE:
+                                JOptionPane.showMessageDialog(null, "Error while decrypting data");
+                                System.exit(1);
+                                SQLite3.close();
+                                break;
+                        }
+
+                        if (entry.getAddedDate() == null || entry.getAddedDate().equals("") || entry.getAddedDate().equals("null")) {
                             break;
                         }
 
-                        addedDate = CoreCryptography.decrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                        type = CoreCryptography.decrypt(type, userInfo.getDecryptString(userInfo.getLoginToken()));
-                        modified = CoreCryptography.decrypt(modified, userInfo.getDecryptString(userInfo.getLoginToken()));
-                        readDate = CoreCryptography.decrypt(readDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                        tags = CoreCryptography.decrypt(tags, userInfo.getDecryptString(userInfo.getLoginToken()));
-                        title = CoreCryptography.decrypt(title, userInfo.getDecryptString(userInfo.getLoginToken()));
-
-                        ArrayList<String> tags_list = new ArrayList<>();
-                        if(!tags.equals("")) {
-                            String[] tags_array = tags.split(",");
-                            for(String tag : tags_array) {
-                                tags_list.add(tag);
-                            }
-                        }
-
-                        ArrayList<String> readDate_list = new ArrayList<>();
-                        if(!readDate.equals("")) {
-                            String[] readDate_array = readDate.split(",");
-                            for(String date : readDate_array) {
-                                readDate_list.add(date);
-                            }
-                        }
-                        
-                        ArrayList<String> modified_list = new ArrayList<>();
-                        if(!modified.equals("")) {
-                            String[] modified_array = modified.split(",");
-                            for(String date : modified_array) {
-                                modified_list.add(date);
-                            }
-                        }
-
-                        Entry entry = new Entry(title, Long.parseLong(id), data, type, addedDate, readDate_list, modified_list, tags_list);
                         Entries.add(entry);
                     }
 
                     decryptionComplete = true;
                 } catch (Exception e) {
                     e.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Error while decrypting data");
+                    JOptionPane.showMessageDialog(null, "Error while reading data");
                     System.exit(1);
                     SQLite3.close();
                 }

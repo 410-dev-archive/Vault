@@ -56,9 +56,6 @@ public class Login extends JPanel implements UpdatableColor {
         buttonSignUp.setBackground(ColorScheme.button);
         buttonLogin.setBackground(ColorScheme.button);
 
-
-        // Place components
-        // TODO: Set the components to be relative and neat
         labelName.setBounds(Frame.frame.getWidth() / 2 - 100, Frame.frame.getHeight() / 2 - 100, 100, 20);
         fieldName.setBounds(Frame.frame.getWidth() / 2 - 100, Frame.frame.getHeight() / 2 - 50, 200, 20);
 

@@ -6,18 +6,13 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.MouseInputAdapter;
 
-import database.SQLParameter;
 import database.SQLStatementBuilder;
-import database.SQLite3;
 import screens.ColorScheme;
 import screens.UpdatableColor;
 import screens.ViewDimension;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.sql.ResultSet;
-import java.util.Base64;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -28,7 +23,7 @@ import javax.swing.JOptionPane;
 import utils.data.Entries;
 import utils.data.Entry;
 import utils.data.UserInfo;
-import utils.CoreCryptography;
+import utils.DataController;
 import utils.DateManager;
 
 public class NewEntry extends JPanel implements UpdatableColor {
@@ -39,7 +34,7 @@ public class NewEntry extends JPanel implements UpdatableColor {
     private String filePath = "";
 
     private static boolean isUpdated = false;
-    private static boolean isSaving = false;
+    // private static boolean isSaving = false;
 
     private static JTextField fieldExtension = new JTextField();
     private static JTextField fieldTitle = new JTextField();
@@ -170,13 +165,14 @@ public class NewEntry extends JPanel implements UpdatableColor {
             add(labelTitle);
             add(fieldTitle);
             add(labelContent);
-            add(fieldContent);
             add(useFileButton);
-            add(labelTags);
-            add(fieldTags);
+            // TODO: add tags
+            // add(labelTags);
+            // add(fieldTags);
             add(labelExtension);
             add(fieldExtension);
             add(saveButton);
+            add(fieldContent);
         }catch(Exception ee) {
             System.out.println(ee.toString());
         }
@@ -216,7 +212,10 @@ public class NewEntry extends JPanel implements UpdatableColor {
         this.userInfo = userInfo;
 
         this.setLayout(null);
-        this.frame.setSize(500, 500);
+        frame.setSize(500, 500);
+        frame.setResizable(true);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.setSize(this.frame.getWidth(), this.frame.getHeight());
 
         this.setBackground(ColorScheme.background);
@@ -254,9 +253,15 @@ public class NewEntry extends JPanel implements UpdatableColor {
         frame.setVisible(true);
     }
 
+    private void enableSaveButton() {
+        saveButton.addMouseListener(onClickSaveAdapter);
+        saveButton.setText("Save");
+        saveButton.setEnabled(true);
+    }
+
 
     private void save(String title, String content, String tags) {
-        isSaving = true;
+        // isSaving = true;
         saveButton.removeMouseListener(onClickSaveAdapter);
         saveButton.setText("Saving...");
         saveButton.setEnabled(false);
@@ -265,154 +270,63 @@ public class NewEntry extends JPanel implements UpdatableColor {
                 String savableContent = content;
                 fieldExtension.setText("Normal Text");
                 if (!filePath.equals("")) {
-                    // Read file to base64
-                    try {
-                        byte[] bytes = Base64.getEncoder().encode(Files.readAllBytes(new File(filePath).toPath()));
-                        savableContent = new String(bytes, "UTF-8");
-                        fieldExtension.setText(filePath.substring(filePath.lastIndexOf(".") + 1));
-                    }catch (NoSuchFileException e) {
-                        JOptionPane.showMessageDialog(null, "File not found");
-                        saveButton.addMouseListener(onClickSaveAdapter);
-                        saveButton.setText("Save");
-                        saveButton.setEnabled(true);
-                        isSaving = false;
+                    String[] exit = DataController.readFile(filePath);
+                    if (exit.length > DataController.EXPECTED_LENGTH) {
+                        int error = Integer.parseInt(exit[DataController.INDEX_ERROR]);
+                        switch(error) {
+                            case DataController.EXIT_FILE_NOT_FOUND:
+                                JOptionPane.showMessageDialog(null, "File not found");
+                                break;
+                            case DataController.EXIT_FILE_IO_FAILURE:
+                                JOptionPane.showMessageDialog(null, "Error reading file");
+                                break;
+                            default:
+                                JOptionPane.showMessageDialog(null, "Unknown error");
+                                break;
+                        }
+                        enableSaveButton();
                         return;
-                    }catch (Exception e) {
-                        e.printStackTrace();
-                        JOptionPane.showMessageDialog(null, "Error reading file");
-                        saveButton.addMouseListener(onClickSaveAdapter);
-                        saveButton.setText("Save");
-                        saveButton.setEnabled(true);
-                        isSaving = false;
-                        return;
+                    }else{
+                        savableContent = exit[DataController.INDEX_CONTENT];
+                        fieldExtension.setText(exit[DataController.INDEX_EXTENSION]);
                     }
                 }
 
                 // Encrypt
-                String addedDate = DateManager.getTimestamp();
-                String name = "";
-                String object = "";
-                String readDate = addedDate + ">>>";
-                String modifiedDate = addedDate + ">>>";
-                String ntags = "";
-                String type = "";
+                Entry unencryptedEntry = new Entry(false);
+                unencryptedEntry.setName(title);
+                unencryptedEntry.addModifiedDate();
+                unencryptedEntry.setAddedDate(DateManager.getTimestamp());
+                unencryptedEntry.setTags(tags);
+                unencryptedEntry.setType(fieldExtension.getText());
+                unencryptedEntry.setObject(savableContent);
 
-                Entry entry = new Entry();
-                entry.setName(title);
-                entry.setModifiedDate(addedDate);
-                entry.setAddedDate(addedDate);
-                entry.setTags(tags);
-                entry.setType(fieldExtension.getText());
-                try{
-                    
-                    name = CoreCryptography.encrypt(title, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    object = CoreCryptography.encrypt(savableContent, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    readDate = CoreCryptography.encrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    modifiedDate = CoreCryptography.encrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    ntags = CoreCryptography.encrypt(tags, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    addedDate = CoreCryptography.encrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    type = CoreCryptography.encrypt(fieldExtension.getText(), userInfo.getDecryptString(userInfo.getLoginToken()));
-
-                    entry.setObject(object);
-                }catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Error encrypting content");
-                    return;
-                }
-
-                // Save to database
-                SQLParameter a = new SQLParameter();
-                SQLParameter b = new SQLParameter();
-                SQLParameter c = new SQLParameter();
-                SQLParameter d = new SQLParameter();
-                SQLParameter e = new SQLParameter();
-                SQLParameter f = new SQLParameter();
-                SQLParameter g = new SQLParameter();
-                SQLParameter h = new SQLParameter();
-
-                a.column = "data";
-                a.value = object;
-
-                b.column = "owner";
-                b.value = userInfo.getLoginToken();
-
-                c.column = "type";
-                c.value = type;
-
-                d.column = "addedDate";
-                d.value = addedDate;
-
-                e.column = "readDate";
-                e.value = readDate;
-
-                f.column = "tags";
-                f.value = ntags;
-
-                g.column = "modifiedDate";
-                g.value = modifiedDate;
-
-                h.column = "title";
-                h.value = name;
-
-                SQLStatementBuilder sql = new SQLStatementBuilder("data", SQLStatementBuilder.INSERT);
-                sql.addParameter(a);
-                sql.addParameter(b);
-                sql.addParameter(c);
-                sql.addParameter(d);
-                sql.addParameter(e);
-                sql.addParameter(f);
-                sql.addParameter(g);
-                sql.addParameter(h);
+                int exit = DataController.addOrEditData(unencryptedEntry, !fieldExtension.getText().equals("Normal Text"), userInfo, SQLStatementBuilder.INSERT);
                 
-                SQLParameter searchFor = new SQLParameter();
-                searchFor.column = "addedDate";
-                searchFor.value = addedDate;
-                searchFor.operator = SQLParameter.EQUAL;
-                searchFor.nextOperand = SQLParameter.AND;
-
-                SQLParameter searchFor2 = new SQLParameter();
-                searchFor2.column = "title";
-                searchFor2.value = name;
-                searchFor2.operator = SQLParameter.EQUAL;
-
-                SQLStatementBuilder sql2 = new SQLStatementBuilder("data", SQLStatementBuilder.SELECT);
-                sql2.addParameter(searchFor);
-                sql2.addParameter(searchFor2);
-
-                try {
-                    SQLite3.executeQuery(sql);
-                    SQLite3.close();
-
-                    ResultSet rs = SQLite3.executeQuery(sql2);
-                    rs.next();
-                    long id = rs.getInt("id");
-
-                    entry.setId(id);
-                    Entries.add(entry);
-                    JOptionPane.showMessageDialog(null, "Successfully saved to database");
-
-                    // Clear fields
-                    fieldTitle.setText("");
-                    textAreaContent.setText("");
-                    fieldTags.setText("");
-                    fieldExtension.setText("Normal Text");
-                    filePath = "";
-                    fieldContent.setVisible(true);
-
-                    saveButton.addMouseListener(onClickSaveAdapter);
-                    saveButton.setText("Save");
-                    saveButton.setEnabled(true);
-
-                    isSaving = false;
-
-                    frame.dispose();
-                }catch(Exception e2) {
-                    e2.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Error saving to database");
-                    saveButton.addMouseListener(onClickSaveAdapter);
-                    saveButton.setText("Save");
-                    saveButton.setEnabled(true);
+                switch(exit) {
+                    case DataController.EXIT_SUCCESS:
+                        break;
+                    case DataController.EXIT_FAILURE:
+                        JOptionPane.showMessageDialog(null, "Error saving entry");
+                        enableSaveButton();
+                        return;
                 }
+
+                JOptionPane.showMessageDialog(null, "Successfully saved to database");
+
+                // Clear fields
+                fieldTitle.setText("");
+                textAreaContent.setText("");
+                fieldTags.setText("");
+                fieldExtension.setText("Normal Text");
+                filePath = "";
+                fieldContent.setVisible(true);
+
+                enableSaveButton();
+
+                // isSaving = false;
+
+                frame.dispose();
             }
         };
 

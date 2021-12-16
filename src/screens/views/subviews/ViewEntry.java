@@ -9,27 +9,19 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.DefaultStyledDocument.ElementSpec;
 
-import database.SQLParameter;
 import database.SQLStatementBuilder;
-import database.SQLite3;
 
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Base64;
 
 import screens.ColorScheme;
 import screens.UpdatableColor;
 import screens.ViewDimension;
-import utils.CoreCryptography;
-import utils.DateManager;
-import utils.data.Entries;
+import utils.DataController;
 import utils.data.Entry;
 import utils.data.UserInfo;
 
@@ -51,10 +43,17 @@ public class ViewEntry extends JPanel implements UpdatableColor {
     private JTextField tags = new JTextField();
     private JTextField content = new JTextField();
 
+    private boolean hasClicked = false;
+
     private MouseInputAdapter onEditButtonClicked = new MouseInputAdapter() {
         @Override
         public void mouseClicked(MouseEvent e) {
             try {
+                if(hasClicked) {
+                    return;
+                }else{
+                    hasClicked = true;
+                }
                 String contentString = "";
                 boolean isFile = false;
                 if (entry.getType().equals("Normal Text")) {
@@ -123,8 +122,15 @@ public class ViewEntry extends JPanel implements UpdatableColor {
             @Override
             public void run() {
                 try {
-                    data = entry.getObject();
-                    data = CoreCryptography.decrypt(data, ViewEntry.userInfo.getDecryptString(ViewEntry.userInfo.getLoginToken()));
+                    switch(entry.decryptObjectOnly(userInfo)) {
+                        case Entry.DECRYPT_FAILURE:
+                            JOptionPane.showMessageDialog(null, "Decryption failed");
+                            break;
+                        default:
+                            data = entry.getObject();
+                            break;
+
+                    }
                     remove(title);
                     buildView();
                 } catch (Exception e) {
@@ -159,22 +165,14 @@ public class ViewEntry extends JPanel implements UpdatableColor {
             public void mouseClicked(MouseEvent e) {
                 int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to delete this entry?", "Confirm", JOptionPane.YES_NO_OPTION);
                 if(confirm == JOptionPane.YES_OPTION) {
-                    try {
-                        SQLParameter parameter = new SQLParameter();
-                        parameter.column = "id";
-                        parameter.value = entry.getId() + "";
-                        parameter.operator = SQLParameter.EQUAL;
-
-                        SQLStatementBuilder builder = new SQLStatementBuilder("data", SQLStatementBuilder.DELETE);
-                        builder.addParameter(parameter);
-
-                        SQLite3.executeQuery(builder);
-                        Entries.remove(entry);
-                        
-                        JOptionPane.showMessageDialog(null, "Entry deleted successfully!");
-                        frame.dispose();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                    switch(DataController.deleteRow(entry)) {
+                        case DataController.EXIT_SQL_FAILURE:
+                            JOptionPane.showMessageDialog(null, "Deletion failed");
+                            break;
+                        default:
+                            JOptionPane.showMessageDialog(null, "Deletion successful");
+                            frame.dispose();
+                            break;
                     }
                 }
             }
@@ -192,6 +190,7 @@ public class ViewEntry extends JPanel implements UpdatableColor {
                     fileChooser.setFileFilter(filter);
                     int result = fileChooser.showSaveDialog(null);
 
+                    // TODO: BETA2.0 - Change to blobs in case of file
                     if (result == JFileChooser.APPROVE_OPTION) {
                         String filePath = fileChooser.getSelectedFile().getAbsolutePath();
                         if (!filePath.endsWith("." + entry.getType())) filePath += "." + entry.getType();
@@ -257,142 +256,36 @@ public class ViewEntry extends JPanel implements UpdatableColor {
         editNormalText.setEnabled(false);
         Thread action = new Thread() {
             public void run() {
-                isSaving = true;
-                String savableContent = content;
-                String extension = "";
-                if (isFile) {
-                    // Read file to base64
-                    try {
-                        byte[] bytes = Base64.getEncoder().encode(Files.readAllBytes(new File(content).toPath()));
-                        savableContent = new String(bytes, "UTF-8");
-                        extension = content.substring(content.lastIndexOf(".") + 1);
-                    }catch (NoSuchFileException e) {
-                        JOptionPane.showMessageDialog(null, "File not found");
-                        return;
-                    }catch (Exception e) {
-                        e.printStackTrace();
-                        JOptionPane.showMessageDialog(null, "Error reading file");
-                        return;
-                    }
-                }else {
-                    extension = "Normal Text";
+                System.out.println("SAVE EVENT");
+                entry.setObject(content);
+                int exitCode = DataController.addOrEditData(entry, isFile, userInfo, SQLStatementBuilder.UPDATE);
+                switch(exitCode) {
+                    case DataController.EXIT_SQL_FAILURE:
+                        JOptionPane.showMessageDialog(null, "Failed to update data. Please try again. (SQL)");
+                        break;
+                    case DataController.EXIT_SUCCESS:
+                        JOptionPane.showMessageDialog(null, "Data updated successfully!");
+                        editNormalText.setText("Success!");
+                        break;
+                    case DataController.EXIT_ENCRYPT_FAILURE:
+                        JOptionPane.showMessageDialog(null, "Failed to encrypt data. Please try again.");
+                        break;
+                    case DataController.EXIT_FAILURE:
+                        JOptionPane.showMessageDialog(null, "Failed to update data. Please try again. (UNKNOWN)");
+                        break;
+                    case DataController.EXIT_FILE_IO_FAILURE:
+                        JOptionPane.showMessageDialog(null, "Failed to read file. Please try again.");
+                        break;
+                    case DataController.EXIT_FILE_NOT_FOUND:
+                        JOptionPane.showMessageDialog(null, "File not found.");
+                        break;
+                    default:
+                        JOptionPane.showMessageDialog(null, "There's problem in the code - Incompatible Communication. Please check for the update, or contact the developer.");
+                        break;
                 }
-
-                // Encrypt
-                Entry newEntry = new Entry();
-                newEntry.setName(title.getText());
-                newEntry.setModifiedDate(entry.getModifiedDate());
-                newEntry.addModifiedDate();
-                newEntry.setAddedDate(entry.getAddedDate());
-                newEntry.setTags(tags.getText());
-                newEntry.setType(extension);
-
-                String addedDate = entry.getAddedDate();
-                String name = "";
-                String object = "";
-                String readDate = "";
-                String modifiedDate = addedDate + ">>>";
-                String ntags = "";
-                String type = "";
-
-                try{
-                    
-                    name = CoreCryptography.encrypt(title.getText(), userInfo.getDecryptString(userInfo.getLoginToken()));
-                    object = CoreCryptography.encrypt(savableContent, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    readDate = CoreCryptography.encrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    modifiedDate = CoreCryptography.encrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    if (tags.getText().replaceAll(" ", "").replaceAll("#", "").equals("")) {
-                        ntags = CoreCryptography.encrypt(tags.getText(), userInfo.getDecryptString(userInfo.getLoginToken()));
-                    }else {
-                        ntags = CoreCryptography.encrypt("", userInfo.getDecryptString(userInfo.getLoginToken()));
-                    }
-                    addedDate = CoreCryptography.encrypt(addedDate, userInfo.getDecryptString(userInfo.getLoginToken()));
-                    type = CoreCryptography.encrypt(extension, userInfo.getDecryptString(userInfo.getLoginToken()));
-
-                    newEntry.setObject(object);
-                }catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Error encrypting content");
-                    return;
-                }
-
-                // Save to database
-                SQLParameter a = new SQLParameter();
-                SQLParameter b = new SQLParameter();
-                SQLParameter c = new SQLParameter();
-                SQLParameter d = new SQLParameter();
-                SQLParameter e = new SQLParameter();
-                SQLParameter f = new SQLParameter();
-                SQLParameter g = new SQLParameter();
-                SQLParameter h = new SQLParameter();
-
-                a.column = "data";
-                a.value = object;
-                a.nextOperand = ",";
-
-                b.column = "owner";
-                b.value = userInfo.getLoginToken();
-                b.nextOperand = ",";
-
-                c.column = "type";
-                c.value = type;
-                c.nextOperand = ",";
-
-                d.column = "addedDate";
-                d.value = addedDate;
-                d.nextOperand = ",";
-
-                e.column = "readDate";
-                e.value = readDate;
-                e.nextOperand = ",";
-
-                f.column = "tags";
-                f.value = ntags;
-                f.nextOperand = ",";
-
-                g.column = "modifiedDate";
-                g.value = modifiedDate;
-                g.nextOperand = ",";
-
-                h.column = "title";
-                h.value = name;
-                h.nextOperand = ",";
-
-                SQLStatementBuilder sql = new SQLStatementBuilder("data", SQLStatementBuilder.UPDATE);
-                sql.addParameter(a);
-                sql.addParameter(b);
-                sql.addParameter(c);
-                sql.addParameter(d);
-                sql.addParameter(e);
-                sql.addParameter(f);
-                sql.addParameter(g);
-                sql.addParameter(h);
-                
-                SQLParameter searchFor = new SQLParameter();
-                searchFor.column = "id";
-                searchFor.value = entry.getId() + "";
-                searchFor.operator = SQLParameter.EQUAL;
-
-                sql.addParameter2(searchFor);
-
-                try {
-                    SQLite3.executeQuery(sql);
-                    SQLite3.close();
-
-                    Entries.remove(entry);
-                    Entries.add(newEntry);
-                    JOptionPane.showMessageDialog(null, "Successfully saved to database");
-                    editNormalText.setText("Updated!");
-                    isSaving = false;
-                }catch(Exception e2) {
-                    e2.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Error saving to database");
-                    editNormalText.setText("Error while updating");
-                    isSaving = true;
-                }
-
-                editNormalText.addMouseListener(onEditButtonClicked);
-                editNormalText.setEnabled(true);
+                // editNormalText.addMouseListener(onEditButtonClicked);
+                // editNormalText.setEnabled(true);
+                frame.dispose();
             }
         };
 
@@ -492,7 +385,9 @@ public class ViewEntry extends JPanel implements UpdatableColor {
 
         this.add(title);
         this.add(content);
-        this.add(tags);
+        // TODO: Add tags
+        tags.setText("");
+        // this.add(tags);
         this.add(delete);
         this.add(export);
         this.add(viewTimestamps);

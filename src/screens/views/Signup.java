@@ -35,7 +35,6 @@ public class Signup extends JPanel implements UpdatableColor {
         this.setLayout(null);
 
         // Set bounds for components
-        // TODO: Set the components to be relative and neat
         labelName.setBounds(Frame.frame.getWidth() / 2 - 100, Frame.frame.getHeight() / 2 - 100, 100, 20);
         fieldName.setBounds(Frame.frame.getWidth() / 2 - 100, Frame.frame.getHeight() / 2 - 50, 200, 20);
 

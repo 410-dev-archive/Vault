@@ -6,16 +6,16 @@ import javax.swing.JPanel;
 
 import screens.ColorScheme;
 import screens.UpdatableColor;
-import utils.data.Static;
+import utils.data.Constants;
 
 public class About extends JPanel implements UpdatableColor {
 
     public static boolean isOpen = false;
 
     public About(JFrame frame) {
-        JLabel version = new JLabel("Version: " + Static.VERSION);
-        JLabel author = new JLabel("Author: " + Static.DEVELOPER);
-        JLabel copyright = new JLabel("Copyright (c) " + Static.DEVELOPER + " 2021-2022");
+        JLabel version = new JLabel("Version: " + Constants.VERSION);
+        JLabel author = new JLabel("Author: " + Constants.DEVELOPER);
+        JLabel copyright = new JLabel("Copyright (c) " + Constants.DEVELOPER + " 2021-2022");
         JLabel disclaimer = new JLabel("Developer does not have any responsibility for any damages caused by this program.");
         JLabel disclaimer2 = new JLabel("This program is currently in development.");
 
@@ -51,7 +51,6 @@ public class About extends JPanel implements UpdatableColor {
 
     @Override
     public void updateColor() {
-        // TODO Auto-generated method stub
         this.setBackground(ColorScheme.background);
         repaint();
     }
