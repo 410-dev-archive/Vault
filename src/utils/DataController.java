@@ -196,9 +196,8 @@ public class DataController {
                     id = rs.getInt("id");
                 }
 
-                parentEntry.setId(id); 
-                parentEntry.setObject(newEntry.getObject());   
-                Entries.add(parentEntry);
+                unencryptedEntry.setId(id); 
+                Entries.add(unencryptedEntry);
             }else{
                 Entries.remove(parentEntry);
                 Entries.add(unencryptedEntry);
