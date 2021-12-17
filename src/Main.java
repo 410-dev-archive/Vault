@@ -9,6 +9,7 @@ import utils.data.Constants;
 public class Main {
     public static void main(String[] args) throws Exception {
 
+        boolean ignoreCompatibility = false;
 
         if (args.length > 0) {
             // Check if there is -d flag
@@ -19,6 +20,13 @@ public class Main {
                     }
                 }
             }
+
+            // Check if there is --ignore-compatibility flag
+            for(int i = 0; i < args.length; i++) {
+                if (args[i].equals("--ignore-compatibility")) {
+                    ignoreCompatibility = true;
+                }
+            }
         }
 
         SQLite3.dbFile = Constants.DATABASE_NAME;
@@ -27,9 +35,11 @@ public class Main {
         // Check if file exist
         File db = new File(Constants.DATABASE_NAME);
 
-        // If exists, then login. Otherwise create new database and signup
-        if (db.isFile()) Frame.setContent(new Login());
-        else {
+        // If exists, then check compatibility + login. Otherwise create new database and signup
+        if (db.isFile()) {
+            if (!ignoreCompatibility) SQLite3.checkCompatibility();
+            Frame.setContent(new Login());
+        } else {
             SQLite3.initialSetup();
             Frame.setContent(new Signup());
         }

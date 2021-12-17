@@ -23,7 +23,7 @@ Vault is a secure, encrypted file database. It is written in Java, with combinat
 
 ## Roadmap for Beta 1.1
 - [x] Centralize DB controller
-- [ ] Check DB compatibility
+- [x] Check DB compatibility
 
 ## Roadmap for Beta 2.0
 - [ ] Searching System

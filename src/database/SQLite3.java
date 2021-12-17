@@ -4,6 +4,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet; 
 import java.sql.Statement;
 
+import javax.swing.JOptionPane;
+
 import screens.ColorScheme;
 import utils.data.Constants;
 
@@ -67,5 +69,41 @@ public class SQLite3 {
         executeQuery("INSERT INTO compatibility (key, value) VALUES ('version', '" + Constants.VERSION + "');");
         executeQuery("INSERT INTO compatibility (key, value) VALUES ('databaseType', '" + Constants.DBTYPE + "');");
         executeQuery("INSERT INTO configurations (key, value) VALUES ('color', '" + ColorScheme.ID_WHITE + "');");
+    }
+
+    public static void checkCompatibility() {
+        try {
+            ResultSet rs = executeQuery("SELECT * FROM compatibility where key = 'databaseType'");
+            if (rs.next()) {
+                String databaseType = rs.getString("value");
+                if (!databaseType.equals(Constants.DBTYPE + "")) {
+                    throw new Exception("Database type is not compatible");
+                }
+                ResultSet rs2 = executeQuery("SELECT * FROM compatibility where key = 'version'");
+                if (rs2.next()) {
+                    String version = rs2.getString("value");
+                    if (!version.equals(Constants.VERSION)) {
+                        if (Integer.parseInt(version) < Integer.parseInt(Constants.VERSION)) {
+                            int exit = JOptionPane.showConfirmDialog(null, "Database is created in older version of Vault. Press OK to update, or close to exit.");
+                            if (exit == JOptionPane.OK_OPTION) {
+                                SQLite3.close();
+                            } else {
+                                JOptionPane.showMessageDialog(null, "Unable to load database.");
+                                System.exit(0);
+                            }
+                        }else{
+                            JOptionPane.showMessageDialog(null, "Database is created in newer version of Vault. Please update Vault to load this database.");
+                            System.exit(0);
+                        }
+                    }
+                }
+            } else {
+                throw new Exception("Database type is not compatible");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Failed checking compatibility. Try updating Vault to load this database.");
+            System.exit(0);
+        }
     }
 }
